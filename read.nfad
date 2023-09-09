@@ -1,0 +1,51 @@
+include type_fs
+
+edge read [in=(fd, buf, size_t), out=ssize_t]
+
+node fd [type=fd]
+node buf [type=buf]
+node count [type=size_t]
+node errno [type=int]
+
+// every transition rule is optional (as in NFA) by default,
+// unless specified otherwise (with ::).
+
+// 3 types of expressions
+//  - list expression (enclosed by ())
+//  - boolean expression (enclosed by "")
+//    - "state == null": invalid state
+//  - value expression (state, literal, range (... -> GCC extension))
+
+// _: any state (same in lhs and rhs)
+
+with [edge=read, in=(fd, buf, count)] {
+  _ -> _ + count [node=fd.off, out=0...count]
+
+  if "fd.off >= fd.len"
+    _ -> _ [node=_, out=0]
+
+  if "count == 0"
+    _ -> _ [node=_, out=0]
+
+  with [node=errno, out=-1] {
+    if "fd.type != FT_SOCK && fd.flags.O_NONBLOCK" {
+      _ -> -EAGAIN
+      _ -> -EWOULDBLOCK
+    }
+
+    if "fd == null || fd.state != FS_OPEN"
+      _ -> -EBADF
+
+    if "fd.type == FT_DIR"
+      _ -> -EISDIR
+
+    // TODO: followings are left generic because it's unable to describe
+    // detailed specifications. can be improved in the future.
+    _ -> -EFAULT
+    _ -> -EINTR
+    _ -> -EINVAL
+    _ -> -EIO
+  }
+
+  // TODO: timestamp semantics in NFS.
+}

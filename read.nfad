@@ -17,9 +17,12 @@ node errno [type=int]
 //  - value expression (state, literal, range (... -> GCC extension))
 
 // _: any state (same in lhs and rhs)
+// _[a-zA-Z0-9]: temporary variable
 
 with [edge=read, in=(fd, buf, count)] {
-  _ -> _ + count [node=fd.off, out=0...count]
+  {
+    _ -> _ + _c [node=fd.off, out=_c]
+  } where "0 <= _c && _c <= count"
 
   if "fd.off >= fd.len"
     _ -> _ [node=_, out=0]

@@ -1,7 +1,0 @@
-type ftype [dtype=size_t, stype=enum, sname=(FT_FILE, FT_DIR, FT_SOCK)]
-type fstate [dtype=size_t, stype=enum, sname=(FS_OPEN)]
-type fflags [dtype=size_t, stype=(bool...), sname=()]
-type fd [dtype=int, 
-         stype=(ftype, fstate, fflags, size_t, size_t),
-         sname=(type, state, flags, off, len)]
-type buf [dtype=void*, stype=[char]]

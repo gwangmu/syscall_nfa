@@ -1,11 +1,6 @@
 include type_fs
 
-edge read [in=(fd, buf, size_t), out=ssize_t]
-
-node fd [type=fd]
-node buf [type=buf]
-node count [type=size_t]
-node errno [type=int]
+edge read [in=(fd, void*, size_t), out=ssize_t]
 
 // every transition rule is optional (as in NFA) by default,
 // unless specified otherwise (with ::).
@@ -14,10 +9,12 @@ node errno [type=int]
 //  - list expression (enclosed by ())
 //  - boolean expression (enclosed by "")
 //    - "state == null": invalid state
-//  - value expression (state, literal, range (... -> GCC extension))
+//  - value expression (state, literal)
 
 // _: any state (same in lhs and rhs)
 // _[a-zA-Z0-9]: temporary variable
+
+// local states: defined when specified in "in".
 
 with [edge=read, in=(fd, buf, count)] {
   {
@@ -31,12 +28,12 @@ with [edge=read, in=(fd, buf, count)] {
     _ -> _ [node=_, out=0]
 
   with [node=errno, out=-1] {
-    if "fd.type != FT_SOCK && fd.flags.O_NONBLOCK" {
+    if "fd.type != FT_SOCK && fd.flags & O_NONBLOCK" {
       _ -> -EAGAIN
       _ -> -EWOULDBLOCK
     }
 
-    if "fd == null || fd.state != FS_OPEN"
+    if "fd == null || !fd.is_open"
       _ -> -EBADF
 
     if "fd.type == FT_DIR"
